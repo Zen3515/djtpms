@@ -23,6 +23,7 @@ Add the integration from the Home Assistant UI. Bluetooth must be enabled and th
 
 ## Entities
 
+- Battery (%)
 - Battery voltage (V)
 - Temperature (°C)
 - Absolute pressure (kPa)
@@ -47,6 +48,7 @@ Gauge pressure is derived by subtracting a fixed 101 kPa atmospheric pressure fr
 
 See `custom_components/djtpms/ble.py` and `custom_components/djtpms/const.py` for the exact parsing logic.
 - Battery voltage (V) = `VV / 10.0`
+- Battery (%) = estimated from battery voltage using a piecewise-linear discharge curve
 - Temperature (°C) = signed int8 conversion of `TT` (0..255 -> -128..127)
 - Absolute pressure (kPa) = `(PH << 8) | PL` (big-endian uint16)
 - Gauge pressure (kPa) = `max(absolute_pressure - 101, 0)`

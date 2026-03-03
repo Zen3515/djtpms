@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     EntityCategory,
+    PERCENTAGE,
     UnitOfElectricPotential,
     UnitOfPressure,
     UnitOfTemperature,
@@ -27,13 +28,32 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import DjtpmsConfigEntry
 from .coordinator import DjtpmsBluetoothUpdate
 from .const import (
+    SENSOR_BATTERY_PERCENTAGE,
     SENSOR_BATTERY_VOLTAGE,
     SENSOR_PRESSURE_ABSOLUTE,
     SENSOR_PRESSURE_GAUGE,
     SENSOR_TEMPERATURE,
 )
 
+BATTERY_DISCHARGE_CURVE: tuple[tuple[float, int], ...] = (
+    (3.3, 100),
+    (3.05, 97),
+    (2.94, 91),
+    (2.9, 75),
+    (2.85, 25),
+    (2.8, 17),
+    (2.6, 0),
+)
+
 SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
+    SENSOR_BATTERY_PERCENTAGE: SensorEntityDescription(
+        key=SENSOR_BATTERY_PERCENTAGE,
+        name="Battery",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     SENSOR_BATTERY_VOLTAGE: SensorEntityDescription(
         key=SENSOR_BATTERY_VOLTAGE,
         name="Battery voltage",
@@ -73,6 +93,25 @@ VALUE_ATTRS: dict[str, str] = {
 }
 
 
+def _battery_percentage_from_voltage(voltage: float) -> int:
+    """Estimate battery percentage from voltage using a discharge curve."""
+    if voltage >= BATTERY_DISCHARGE_CURVE[0][0]:
+        return 100
+    if voltage < BATTERY_DISCHARGE_CURVE[-1][0]:
+        return 0
+
+    for i in range(len(BATTERY_DISCHARGE_CURVE) - 1):
+        voltage_high, percent_high = BATTERY_DISCHARGE_CURVE[i]
+        voltage_low, percent_low = BATTERY_DISCHARGE_CURVE[i + 1]
+        if voltage_low < voltage <= voltage_high:
+            percentage = percent_low + ((voltage - voltage_low) / (voltage_high - voltage_low)) * (
+                percent_high - percent_low
+            )
+            return int(round(percentage))
+
+    return 0
+
+
 def _entity_key(key: str) -> PassiveBluetoothEntityKey:
     """Return an entity key for the DJTPMS device."""
     return PassiveBluetoothEntityKey(key, None)
@@ -82,6 +121,9 @@ def _value_for_key(update: DjtpmsBluetoothUpdate, key: str) -> float | int | Non
     """Return the value for a given sensor key."""
     if update is None:
         return None
+
+    if key == SENSOR_BATTERY_PERCENTAGE:
+        return _battery_percentage_from_voltage(update.battery_voltage)
 
     if (attr := VALUE_ATTRS.get(key)) is None:
         return None

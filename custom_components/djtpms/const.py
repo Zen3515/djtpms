@@ -14,6 +14,7 @@ CRC8_POLY: Final = 0x2F
 CRC8_INIT: Final = 0xDF
 
 SENSOR_BATTERY_VOLTAGE: Final = "battery_voltage"
+SENSOR_BATTERY_PERCENTAGE: Final = "battery_percentage"
 SENSOR_TEMPERATURE: Final = "temperature"
 SENSOR_PRESSURE_ABSOLUTE: Final = "absolute_pressure"
 SENSOR_PRESSURE_GAUGE: Final = "gauge_pressure"

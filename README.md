@@ -36,6 +36,7 @@ Notes:
 ## Entities
 
 The integration creates the following sensor entities per device:
+- Battery (%)
 - Battery voltage (V)
 - Temperature (°C)
 - Absolute pressure (kPa)
@@ -62,6 +63,7 @@ The DJTPMS advertisement frame is parsed from manufacturer or service data. The 
 
 Derived values follow the parsing logic in `custom_components/djtpms/ble.py` and constants in `custom_components/djtpms/const.py`:
 - Battery voltage (V) = `VV / 10.0`
+- Battery (%) = estimated from battery voltage using a piecewise-linear discharge curve
 - Temperature (°C) = signed int8 conversion of `TT` (0..255 -> -128..127)
 - Absolute pressure (kPa) = `(PH << 8) | PL` (big-endian uint16)
 - Gauge pressure (kPa) = `max(absolute_pressure - 101, 0)`
